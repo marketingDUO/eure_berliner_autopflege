@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://berliner-autopflege-neu.tim-lange248064.chatgpt.site/sitemap.xml

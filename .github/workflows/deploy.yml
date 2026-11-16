@@ -1,0 +1,29 @@
+name: Website auf Hetzner veröffentlichen
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy-hetzner
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SITE_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://www.berliner-autopflege.com' }}
+      DEPLOY_HOST: ${{ secrets.HETZNER_HOST || secrets.FTP_SERVER || secrets.FTP_HOST }}
+      DEPLOY_USER: ${{ secrets.HETZNER_USER || secrets.FTP_USERNAME || secrets.FTP_USER }}
+      DEPLOY_PASSWORD: ${{ secrets.HETZNER_PASSWORD || secrets.FTP_PASSWORD || secrets.FTP_PASS }}
+      DEPLOY_PORT: ${{ secrets.HETZNER_PORT || secrets.FTP_PORT || '21' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.HETZNER_TARGET_DIR || secrets.HETZNER_PATH || secrets.FTP_REMOTE_DIR || '.' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Website für die öffentliche Domain erzeugen
+        run: python3 generate.py
+      - name: Website und interne Links prüfen
+        run: python3 scripts/validate.py
+      - name: Website verschlüsselt auf Hetzner übertragen
+        run: python3 scripts/deploy.py
