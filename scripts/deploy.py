@@ -11,10 +11,32 @@ if '://' in host: host=urlsplit(host).hostname
 port=int(os.environ.get('DEPLOY_PORT') or '21')
 target=os.environ.get('DEPLOY_PATH','.')
 if any(x in target for x in ['\n','\r','"']): sys.exit('Ungültiger Zielordner.')
-ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
-ftp.connect(host,port)
-ftp.login(os.environ['DEPLOY_USER'],os.environ['DEPLOY_PASSWORD'])
-ftp.prot_p()
+if port == 22:
+    import paramiko
+    class SFTPConnection:
+        def __init__(self):
+            self.client=paramiko.SSHClient()
+            self.client.load_system_host_keys()
+            # First connection to the user's configured SSH endpoint.
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.connect(host,port=port,username=os.environ['DEPLOY_USER'],password=os.environ['DEPLOY_PASSWORD'],look_for_keys=False,allow_agent=False,timeout=45)
+            self.sftp=self.client.open_sftp()
+        def cwd(self,path):
+            try: self.sftp.chdir(path)
+            except OSError as e: raise ftplib.error_perm(str(e)) from e
+        def pwd(self): return self.sftp.getcwd() or self.sftp.normalize('.')
+        def nlst(self): return self.sftp.listdir('.')
+        def mkd(self,path): return self.sftp.mkdir(path)
+        def retrbinary(self,command,callback):
+            with self.sftp.open(command.removeprefix('RETR '),'rb') as f: callback(f.read())
+        def storbinary(self,command,stream): self.sftp.putfo(stream,command.removeprefix('STOR '))
+        def quit(self): self.sftp.close();self.client.close()
+    ftp=SFTPConnection()
+else:
+    ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+    ftp.connect(host,port)
+    ftp.login(os.environ['DEPLOY_USER'],os.environ['DEPLOY_PASSWORD'])
+    ftp.prot_p()
 ftp.cwd(target)
 entries=ftp.nlst()
 names={x.rstrip('/').rsplit('/',1)[-1] for x in entries}-{'.','..'}

@@ -25,5 +25,9 @@ jobs:
         run: python3 generate.py
       - name: Website und interne Links prüfen
         run: python3 scripts/validate.py
+      - name: SFTP-Unterstützung installieren
+        run: |
+          python3 -m venv "$RUNNER_TEMP/deploy-venv"
+          "$RUNNER_TEMP/deploy-venv/bin/pip" install --quiet 'paramiko>=3.5,<5'
       - name: Website verschlüsselt auf Hetzner übertragen
-        run: python3 scripts/deploy.py
+        run: '"$RUNNER_TEMP/deploy-venv/bin/python" scripts/deploy.py' 
