@@ -18,7 +18,7 @@ jobs:
       DEPLOY_USER: ${{ secrets.HETZNER_USER || secrets.FTP_USERNAME || secrets.FTP_USER }}
       DEPLOY_PASSWORD: ${{ secrets.HETZNER_PASSWORD || secrets.FTP_PASSWORD || secrets.FTP_PASS }}
       DEPLOY_PORT: ${{ secrets.HETZNER_PORT || secrets.FTP_PORT || '21' }}
-      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.HETZNER_TARGET_DIR || secrets.HETZNER_PATH || secrets.FTP_REMOTE_DIR || '.' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.HETZNER_TARGET_DIR || secrets.HETZNER_PATH || secrets.HETZNER_REMOTE_DIR || secrets.HETZNER_REMOTE_PATH || secrets.FTP_TARGET_DIR || secrets.FTP_REMOTE_DIR || secrets.FTP_SERVER_DIR || '.' }}
     steps:
       - uses: actions/checkout@v4
       - name: Website für die öffentliche Domain erzeugen

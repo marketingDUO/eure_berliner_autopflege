@@ -41,6 +41,14 @@ ftp.cwd(target)
 entries=ftp.nlst()
 names={x.rstrip('/').rsplit('/',1)[-1] for x in entries}-{'.','..'}
 print('Verbindung zu Hetzner erfolgreich. Zielordner enthält:', ', '.join(sorted(names)))
+print('Aktuelles Website-Verzeichnis:',ftp.pwd())
+if port == 22:
+    current=ftp.pwd()
+    ftp.cwd('..')
+    print('Übergeordnetes Verzeichnis:',ftp.pwd())
+    print('Verzeichnisnamen:',', '.join(ftp.nlst()))
+    ftp.cwd(current)
+
 # A server/account root must never receive a site by accident.
 if target in ('.','/','') and names.intersection({'public_html','httpdocs','www','htdocs'}):
     sys.exit('DEPLOY_PATH muss auf den Website-Ordner zeigen; der aktuelle FTP-Ordner enthält Hosting-Verzeichnisse.')
@@ -62,7 +70,9 @@ for path in files:
         try: ftp.cwd(part)
         except ftplib.error_perm:
             ftp.mkd(part);ftp.cwd(part)
+            if port == 22: ftp.sftp.chmod('.',0o755)
     with path.open('rb') as f: ftp.storbinary('STOR '+path.name,f)
+    if port == 22: ftp.sftp.chmod(path.name,0o644)
     print('Hochgeladen:',rel)
 ftp.cwd(base)
 from io import BytesIO
